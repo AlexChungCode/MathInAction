@@ -136,6 +136,7 @@ class GCN(torch.nn.Module):
    
         for i, conv in enumerate(self.convs):
             # bz*nodes, hidden
+            print(f'Conv {i} input {z.shape}, edge_index {edge_index.shape}, edge_attr {edge_attr.shape}')
             z = conv(z, edge_index, edge_attr)
 
         if self.pooling == "concat":

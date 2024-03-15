@@ -2,7 +2,7 @@ import torch
 import numpy as np
 import random
 
-def mixup_data(x, nodes, y, alpha=1.0, device='cuda'):
+def mixup_data(x, nodes, y, alpha=1.0, device=torch.device('cuda' if torch.cuda.is_available() else 'cpu')):
     '''Returns mixed inputs, pairs of targets, and lambda'''
     if alpha > 0:
         lam = np.random.beta(alpha, alpha)

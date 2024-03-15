@@ -40,7 +40,7 @@ def main(args):
     # seed_everything(args.seed) # use args.seed for each run
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
     self_dir = os.path.dirname(os.path.realpath(__file__))
-
+    # print(model_name)
     if args.dataset_name == 'ABCD':  # ABCD dataset puts files in a separate directory
         root_dir = os.path.join(self_dir, 'datasets/ABCD/')
     elif args.dataset_name == 'PNC':
@@ -55,6 +55,7 @@ def main(args):
     y = get_y(dataset)
     num_features = dataset[0].x.shape[1]
     nodes_num = dataset.num_nodes
+    # print(dataset[0])
 
     # if args.model_name == 'gcn':
     #     bin_edges = calculate_bin_edges(dataset, num_bins=args.bucket_num)
