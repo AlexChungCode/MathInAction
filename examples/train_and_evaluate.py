@@ -7,12 +7,17 @@ from typing import Optional
 from torch.utils.data import DataLoader
 import logging
 from src.utils import mixup, mixup_criterion
+import json
 
-
-def train_and_evaluate(model, train_loader, test_loader, optimizer, device, args):
+def train_and_evaluate(model, train_loader, test_loader, optimizer, device, args,fold_idx):
     model.train()
     accs, aucs, macros = [], [], []
     epoch_num = args.epochs
+    # Store results from training run in json
+    
+    # Initialize a dictionary to store the loss values
+    loss_data = {"train_loss": [],"accs_train": [], "aucs_train": [], "macros_train": [], "test_loss": [], "accs_test": [], "aucs_test": [], "macros_test": []}
+
 
     for i in range(epoch_num):
         loss_all = 0
@@ -35,22 +40,41 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, args
             loss_all += loss.item()
         epoch_loss = loss_all / len(train_loader.dataset)
 
-        train_micro, train_auc, train_macro = evaluate(model, device, train_loader)
+        train_micro, train_auc, train_macro,_ = evaluate(model, device, train_loader)
         logging.info(f'(Train) | Epoch={i:03d}, loss={epoch_loss:.4f}, '
                      f'train_micro={(train_micro * 100):.2f}, train_macro={(train_macro * 100):.2f}, '
                      f'train_auc={(train_auc * 100):.2f}')
 
+        
+
+
         if (i + 1) % args.test_interval == 0:
-            test_micro, test_auc, test_macro = evaluate(model, device, test_loader)
+            test_micro, test_auc, test_macro,test_loss = evaluate(model, device, test_loader)
             accs.append(test_micro)
             aucs.append(test_auc)
             macros.append(test_macro)
             text = f'(Train Epoch {i}), test_micro={(test_micro * 100):.2f}, ' \
                    f'test_macro={(test_macro * 100):.2f}, test_auc={(test_auc * 100):.2f}\n'
             logging.info(text)
+            
+            loss_data["train_loss"].append(epoch_loss)
+            loss_data["accs_train"].append(train_micro)
+            loss_data["aucs_train"].append(train_auc)
+            loss_data["macros_train"].append(train_macro)
+            
+            loss_data["test_loss"].append(test_loss) 
+            loss_data["accs_test"].append(test_micro)
+            loss_data["aucs_test"].append(test_auc)
+            loss_data["macros_test"].append(test_macro)
+            
+            with open(f"loss_data_{args.model_name}_fold_{fold_idx}.json", "w") as json_file:
+                json.dump(loss_data, json_file)
+
 
         if args.enable_nni:
             nni.report_intermediate_result(train_auc)
+            
+
 
     accs, aucs, macros = np.sort(np.array(accs)), np.sort(np.array(aucs)), np.sort(np.array(macros))
     return accs.mean(), aucs.mean(), macros.mean()
@@ -60,17 +84,22 @@ def train_and_evaluate(model, train_loader, test_loader, optimizer, device, args
 def evaluate(model, device, loader, test_loader: Optional[DataLoader] = None) -> (float, float):
     model.eval()
     preds, trues, preds_prob = [], [], []
+    loss_all = 0
+
 
     correct, auc = 0, 0
     for data in loader:
         data = data.to(device)
         c = model(data)
+        loss = F.nll_loss(c, data.y)
+        loss_all += loss.item()
 
         pred = c.max(dim=1)[1]
         preds += pred.detach().cpu().tolist()
         preds_prob += torch.exp(c)[:, 1].detach().cpu().tolist()
         trues += data.y.detach().cpu().tolist()
 
+    test_loss = loss_all / len(loader.dataset)
     train_auc = metrics.roc_auc_score(trues, preds_prob)
 
     if np.isnan(auc):
@@ -82,4 +111,4 @@ def evaluate(model, device, loader, test_loader: Optional[DataLoader] = None) ->
         test_micro, test_auc, test_macro = evaluate(model, device, test_loader)
         return train_micro, train_auc, train_macro, test_micro, test_auc, test_macro
     else:
-        return train_micro, train_auc, train_macro
+        return train_micro, train_auc, train_macro,test_loss

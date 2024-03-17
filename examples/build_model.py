@@ -17,6 +17,10 @@ def build_model(args, device, model_name, num_features, num_nodes):
                       GAT(num_features, args, num_nodes, num_classes=2),
                       MLP(2 * num_nodes, args.gat_hidden_dim, args.n_MLP_layers, torch.nn.ReLU, n_classes=2),
                       ).to(device)
+        
+    elif model_name == 'gat_hir':
+        print("Not yet implemented")
+        raise NotImplementedError
     else:
         raise ValueError(f"ERROR: Model variant \"{args.variant}\" not found!")
     return model

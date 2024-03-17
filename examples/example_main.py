@@ -66,6 +66,7 @@ def main(args):
     for _ in range(args.repeat):
         seed_everything(random.randint(1, 1000000))  # use random seed for each run
         skf = StratifiedKFold(n_splits=args.k_fold_splits, shuffle=True)
+        fold_idx = 0
         for train_index, test_index in skf.split(dataset, y):
             model = build_model(args, device, model_name, num_features, nodes_num)
             optimizer = torch.optim.Adam(model.parameters(), lr=args.lr, weight_decay=args.weight_decay)
@@ -76,7 +77,7 @@ def main(args):
 
             # train
             test_micro, test_auc, test_macro = train_and_evaluate(model, train_loader, test_loader,
-                                                                  optimizer, device, args)
+                                                                  optimizer, device, args,fold_idx=fold_idx)
 
             test_micro, test_auc, test_macro = evaluate(model, device, test_loader)
             logging.info(f'(Initial Performance Last Epoch) | test_micro={(test_micro * 100):.2f}, '
@@ -85,6 +86,7 @@ def main(args):
             accs.append(test_micro)
             aucs.append(test_auc)
             macros.append(test_macro)
+            fold_idx += 1
 
     result_str = f'(K Fold Final Result)| avg_acc={(np.mean(accs) * 100):.2f} +- {(np.std(accs) * 100): .2f}, ' \
                  f'avg_auc={(np.mean(aucs) * 100):.2f} +- {np.std(aucs) * 100:.2f}, ' \

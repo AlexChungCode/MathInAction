@@ -119,6 +119,7 @@ class GAT(torch.nn.Module):
             # print(f'Gat num heads  {num_heads}')
             # print(f'Gat dropout  {dropout}')
             # print(f'Gat mp type  {gat_mp_type}')
+            
             conv = torch_geometric.nn.Sequential('x, edge_index, edge_attr', [
                 (MPGATConv(gat_input_dim, hidden_dim, heads=num_heads, dropout=dropout,
                                  gat_mp_type=gat_mp_type),'x, edge_index, edge_attr -> x'),
