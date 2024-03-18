@@ -79,7 +79,7 @@ def main(args):
             test_micro, test_auc, test_macro = train_and_evaluate(model, train_loader, test_loader,
                                                                   optimizer, device, args,fold_idx=fold_idx)
 
-            test_micro, test_auc, test_macro = evaluate(model, device, test_loader)
+            test_micro, test_auc, test_macro,_ = evaluate(model, device, test_loader)
             logging.info(f'(Initial Performance Last Epoch) | test_micro={(test_micro * 100):.2f}, '
                          f'test_macro={(test_macro * 100):.2f}, test_auc={(test_auc * 100):.2f}')
 

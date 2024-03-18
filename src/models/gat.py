@@ -3,14 +3,14 @@ from torch import Tensor
 from torch.nn import Parameter, Linear
 from torch.nn import functional as F
 from typing import Union, Tuple, Optional
-from torch_geometric.typing import Size,OptTensor
+from torch_geometric.typing import Size,OptTensor,Adj,OptPairTensor
 from torch_geometric.nn import global_add_pool, global_mean_pool, MessagePassing, GATConv
 from torch_sparse import SparseTensor, matmul, fill_diag, sum as sparsesum, mul
 from torch_geometric.nn.inits import glorot, zeros
 from torch_geometric.utils import softmax
 from torch import nn
 import torch_geometric
-
+import json
 
 class MPGATConv(GATConv):
     def __init__(self, in_channels, out_channels, heads, concat: bool = True,
@@ -21,8 +21,19 @@ class MPGATConv(GATConv):
         print(f'Heads {heads}')
 
         self.gat_mp_type = gat_mp_type
-
-
+        
+    def forward(self, x: Union[Tensor, OptPairTensor], edge_index: Adj,
+                edge_attr: OptTensor = None, size: Size = None,
+                return_attention_weights=None):
+        # Call the superclass's forward method
+        x, (edge_ind, alpha) = super().forward(x, edge_index,edge_attr=edge_attr, size=size, return_attention_weights=True)
+        # Store the attention weights
+    
+        # Write the attention weights to a file
+        torch.save(edge_ind,'edge_indicies.pt')
+        torch.save(alpha, 'attention_weights.pt')
+        
+        return x
         
     # def message(self, x_j: Tensor, alpha: Tensor, edge_attr: OptTensor) -> Tensor:
     #     if edge_attr is not None:
