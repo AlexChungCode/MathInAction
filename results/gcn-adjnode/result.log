@@ -1,0 +1,3 @@
+['/root/uni/MathInAction/examples/example_main.py', '--dataset_name', 'ABIDE', '--test_interval', '1']
+(K Fold Final Result)| avg_acc=56.79 +-  2.63, avg_auc=61.61 +- 1.68, avg_macro=56.34 +- 2.73
+
